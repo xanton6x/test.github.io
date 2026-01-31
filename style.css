@@ -1,0 +1,44 @@
+:root {
+    --bg-dark: #0b0e14;
+    --card-bg: #1a1f26;
+    --accent: #00ff88;
+    --text: #ffffff;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+}
+
+.hero {
+    text-align: center;
+    padding: 80px 20px;
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://via.placeholder.com/1920x600');
+    background-size: cover;
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    border: none;
+    padding: 12px 30px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.bracket-container {
+    display: flex;
+    gap: 40px;
+    padding: 40px;
+    justify-content: center;
+}
+
+.match {
+    background: var(--card-bg);
+    border-left: 4px solid var(--accent);
+    padding: 15px;
+    margin-bottom: 10px;
+    min-width: 150px;
+}
