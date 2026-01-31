@@ -1,44 +1,117 @@
 :root {
-    --bg-dark: #0b0e14;
-    --card-bg: #1a1f26;
-    --accent: #00ff88;
-    --text: #ffffff;
+    --primary: #7000ff;
+    --secondary: #00f2ff;
+    --bg: #05070a;
+    --card: #12141c;
+    --text-main: #ffffff;
+    --text-dim: #a0a0a0;
 }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body {
-    background-color: var(--bg-dark);
-    color: var(--text);
-    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
     margin: 0;
+    padding-bottom: 80px; /* Space for bottom nav */
+    overflow-x: hidden;
 }
 
-.hero {
-    text-align: center;
-    padding: 80px 20px;
-    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://via.placeholder.com/1920x600');
-    background-size: cover;
-}
-
-.btn-primary {
-    background-color: var(--accent);
-    border: none;
-    padding: 12px 30px;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.bracket-container {
+/* App Header */
+.app-header {
     display: flex;
-    gap: 40px;
-    padding: 40px;
-    justify-content: center;
+    justify-content: space-between;
+    padding: 20px;
+    align-items: center;
+    background: rgba(5, 7, 10, 0.8);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-.match {
-    background: var(--card-bg);
-    border-left: 4px solid var(--accent);
-    padding: 15px;
-    margin-bottom: 10px;
-    min-width: 150px;
+.avatar {
+    width: 35px;
+    height: 35px;
+    background: var(--primary);
+    border-radius: 50%;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
 }
+
+/* Tournament Card (Glassmorphism) */
+.tournament-card {
+    margin: 15px;
+    padding: 25px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--primary), #3a0085);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(112, 0, 255, 0.3);
+}
+
+.join-btn {
+    background: white;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: bold;
+    margin-top: 15px;
+    width: 100%;
+}
+
+/* Mobile Stats Grid */
+.stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    padding: 0 15px;
+}
+
+.stat-item {
+    background: var(--card);
+    padding: 15px;
+    border-radius: 15px;
+    text-align: center;
+}
+
+.stat-item span { display: block; color: var(--text-dim); font-size: 0.8rem; }
+
+/* Bracket Match Cards */
+.match-card {
+    background: var(--card);
+    margin: 15px;
+    border-radius: 12px;
+    border-left: 4px solid var(--secondary);
+}
+
+.team {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 15px;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: var(--card);
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0 25px 0; /* Extra bottom padding for iPhone notch */
+    border-top: 1px solid #222;
+}
+
+.nav-item {
+    text-decoration: none;
+    color: var(--text-dim);
+    text-align: center;
+    transition: 0.3s;
+}
+
+.nav-item.active { color: var(--secondary); }
+.nav-item span { display: block; font-size: 1.4rem; }
