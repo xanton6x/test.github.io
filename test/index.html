@@ -1,0 +1,348 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>R.C.C PassManager - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') { window.location.href = "login.html"; }
+    </script>
+    <style>
+        :root {
+            --primary: #2c3e50; --secondary: #34495e; --accent: #3498db;
+            --success: #2ecc71; --danger: #e74c3c; --warning: #f1c40f;
+            --light: #f8f9fa; --white: #ffffff; --border: #dcdde1;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; height: 100vh; background-color: var(--light); color: #333; }
+        
+        /* Sidebar & Layout */
+        #sidebar { width: 320px; background-color: var(--primary); color: white; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.1); z-index: 10; }
+        .sidebar-header { padding: 25px; background-color: #1a252f; font-size: 1.3rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* --- חיפוש לקוחות (Sidebar) --- */
+        .search-box { padding: 15px; background: #1a252f; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .search-box input { 
+            width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); 
+            background: rgba(255,255,255,0.08); color: white; outline: none; box-sizing: border-box; transition: all 0.3s ease; font-size: 14px;
+        }
+        .search-box input:focus { background: rgba(255,255,255,0.15); border-color: var(--accent); box-shadow: 0 0 8px rgba(52, 152, 219, 0.3); }
+
+        /* --- חיפוש מוצרים (Main Content) --- */
+        .product-search { margin-bottom: 15px; width: 250px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; outline: none; }
+
+        /* --- תיקון הגלילה --- */
+        #customerList { flex-grow: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #455a64 transparent; }
+        #customerList::-webkit-scrollbar { width: 6px; }
+        #customerList::-webkit-scrollbar-track { background: transparent; }
+        #customerList::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .customer-item { padding: 12px 20px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .customer-item:hover { background-color: rgba(255,255,255,0.05); }
+        .customer-item.active { background-color: var(--accent); font-weight: bold; border-left: 5px solid white; }
+        
+        .stats-bar { background: #1a252f; padding: 10px 20px; font-size: 12px; display: flex; justify-content: space-between; color: #bdc3c7; border-top: 1px solid #2c3e50; }
+        #main-content { flex-grow: 1; padding: 40px; overflow-y: auto; }
+        .card { background: var(--white); padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 15px; border-bottom: 2px solid var(--light); }
+        
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background-color: #f1f2f6; color: #57606f; padding: 15px; text-align: right; border: 1px solid var(--border); }
+        td { padding: 12px 15px; border: 1px solid var(--border); vertical-align: middle; }
+        tr:nth-child(even) { background-color: #fcfcfc; }
+        
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-add { background-color: var(--success); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-copy { background: #f1f2f6; border: 1px solid #ccc; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+        .btn-edit { background-color: var(--warning); color: #2f3542; padding: 5px 12px; font-size: 12px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div id="customerModal" class="modal">
+    <div class="modal-content">
+        <h2>הוספת לקוח חדש 👤</h2>
+        <div class="form-group"><label>שם החברה / הלקוח:</label><input type="text" id="newCustomerName" placeholder="למשל: אלפא טכנולוגיות"></div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-add" style="flex: 1;" onclick="confirmAddCustomer()">צור לקוח</button>
+            <button class="btn" style="background:#ccc;" onclick="closeCustomerModal()">ביטול</button>
+        </div>
+    </div>
+</div>
+
+<div id="passwordModal" class="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle">פרטי גישה</h2>
+        <div class="form-group"><label>סוג החיבור:</label><input type="text" id="sysInput"></div>
+        <div class="form-group"><label>שם משתמש:</label><input type="text" id="userInput"></div>
+        <div class="form-group"><label>סיסמה:</label><input type="text" id="passInput"></div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-add" style="flex: 1;" onclick="confirmAddPassword()">שמור</button>
+            <button class="btn" style="background:#ccc;" onclick="closeModal()">ביטול</button>
+        </div>
+    </div>
+</div>
+
+<div id="sidebar">
+    <div class="sidebar-header"><span> R.C.C  ניהול סיסמאות</span><button onclick="logout()" style="background:none; border:1px solid white; color:white; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:10px;">יציאה</button></div>
+    <div class="search-box"><input type="text" id="searchInput" placeholder="חיפוש לקוח..." onkeyup="renderCustomers()"></div>
+    <div id="customerList"></div>
+    <div class="stats-bar"><span id="stat-customers">לקוחות: 0</span><span id="stat-passwords">סיסמאות: 0</span></div>
+    
+    <div style="padding: 15px; background: #1a252f; border-top: 1px solid #2c3e50;">
+        <button class="btn btn-add" style="width: 100%; justify-content: center;" onclick="openCustomerModal()">+ לקוח חדש</button>
+        <button class="btn" style="width: 100%; margin-top:10px; background:var(--accent); color:white; justify-content: center;" onclick="exportToExcel()">📥 גיבוי CSV</button>
+        <input type="file" id="importFileInput" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleFileImport(event)">
+        <button class="btn" style="width: 100%; margin-top:10px; background: #9b59b6; color: white; justify-content: center;" onclick="document.getElementById('importFileInput').click()">📤 ייבוא מאקסל/CSV</button>
+        <button class="btn" style="width: 100%; margin-top:10px; background: #34495e; color: white; border: 1px solid #5d6d7e; justify-content: center;" onclick="window.open('view_logs.php', '_blank')">📋 יומן פעולות (Audit)</button>
+    </div>
+</div>
+
+<div id="main-content">
+    <div id="view-default" style="text-align: center; color: #a4b0be; margin-top: 150px;">
+        <div style="font-size: 60px;">🏢</div>
+        <h2>ניהול סיסמאות של אר.סי.סי</h2>
+    </div>
+
+    <div id="view-details" style="display: none;" class="card">
+        <div class="header-row">
+            <h1 id="currentCustomerName" style="margin: 0; color: var(--primary);"></h1>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-add" onclick="openModal()">+ מוצר</button>
+                <button class="btn btn-danger" onclick="deleteCustomer()">מחק לקוח</button>
+            </div>
+        </div>
+        <input type="text" id="productSearchInput" class="product-search" placeholder="חיפוש מוצר בלקוח זה..." onkeyup="renderPasswords()">
+        
+        <table>
+            <thead><tr><th>מוצר / מערכת</th><th>שם משתמש</th><th>סיסמה</th><th>פעולות</th></tr></thead>
+            <tbody id="passwordTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let data = {};
+    let activeCustomer = null;
+    let editingIndex = null;
+
+    async function loadFromServer() {
+        try {
+            const res = await fetch('db.php?action=load');
+            const text = await res.text();
+            data = (text && text.trim() !== "") ? JSON.parse(text) : {};
+            
+            // רינדור ראשוני של הלקוחות
+            renderCustomers();
+            
+            // בדיקה האם יש לקוח ב-URL לצורך רענון
+            const urlParams = new URLSearchParams(window.location.search);
+            const customerParam = urlParams.get('customer');
+            
+            if(customerParam && data[customerParam]) {
+                // קוראים ישירות ללוגיקה של הבחירה כדי למנוע כפילות ב-URL
+                activeCustomer = customerParam;
+                document.getElementById('view-default').style.display = 'none';
+                document.getElementById('view-details').style.display = 'block';
+                document.getElementById('currentCustomerName').innerText = customerParam;
+                renderCustomers(); 
+                renderPasswords();
+            }
+        } catch(e) { console.error("Load error:", e); data = {}; renderCustomers(); }
+    }
+
+    async function save(target = "Global Update") {
+        try {
+            const user = sessionStorage.getItem('currentUser') || 'Unknown';
+            await fetch(`db.php?action=save&target=${encodeURIComponent(target)}&user=${encodeURIComponent(user)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } catch(e) { console.error("Save error", e); }
+    }
+
+    function renderCustomers() {
+        const list = document.getElementById('customerList');
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        list.innerHTML = '';
+        if (!data) data = {};
+        const sorted = Object.keys(data).sort((a, b) => a.localeCompare(b, 'he'));
+        let totalPass = 0;
+        sorted.forEach(name => {
+            totalPass += data[name].length;
+            if (name.toLowerCase().includes(term)) {
+                const div = document.createElement('div');
+                div.className = `customer-item ${activeCustomer === name ? 'active' : ''}`;
+                div.innerHTML = `<span>${name}</span><small style="background:rgba(255,255,255,0.2); padding:1px 6px; border-radius:10px">${data[name].length}</small>`;
+                div.onclick = () => selectCustomer(name);
+                list.appendChild(div);
+            }
+        });
+        document.getElementById('stat-customers').innerText = `לקוחות: ${sorted.length}`;
+        document.getElementById('stat-passwords').innerText = `סיסמאות: ${totalPass}`;
+    }
+
+    function selectCustomer(name) {
+        activeCustomer = name;
+        
+        // עדכון ה-URL בלי לרענן
+        const newUrl = window.location.pathname + '?customer=' + encodeURIComponent(name);
+        window.history.pushState({path:newUrl}, '', newUrl);
+
+        document.getElementById('view-default').style.display = 'none';
+        document.getElementById('view-details').style.display = 'block';
+        document.getElementById('currentCustomerName').innerText = name;
+        
+        const prodInput = document.getElementById('productSearchInput');
+        if(prodInput) prodInput.value = ''; 
+        
+        renderCustomers(); renderPasswords();
+    }
+
+    function renderPasswords() {
+        const tbody = document.getElementById('passwordTableBody');
+        const searchTerm = document.getElementById('productSearchInput').value.toLowerCase();
+        tbody.innerHTML = '';
+        if(!data[activeCustomer]) return;
+        
+        data[activeCustomer].forEach((item, index) => {
+            if(item.system.toLowerCase().includes(searchTerm) || item.user.toLowerCase().includes(searchTerm)) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${item.system}</strong></td>
+                    <td>${item.user} <button class="btn-copy" onclick="copyText('${item.user}', this)">📋</button></td>
+                    <td><input type="password" value="${item.pass}" readonly onclick="this.type='text'" onblur="this.type='password'" style="border:none; background:transparent; width:110px; font-family:monospace;"> 
+                        <button class="btn-copy" onclick="copyText('${item.pass}', this)">📋</button></td>
+                    <td style="white-space:nowrap">
+                        <button class="btn btn-edit" onclick="openEditModal(${index})">ערוך</button>
+                        <button class="btn" style="background:#ffebee; color:red; padding:5px; border:1px solid red; font-size:11px" onclick="deletePass(${index})">מחק</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        });
+    }
+
+    function copyText(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+            const old = btn.innerText; btn.innerText = "✅";
+            setTimeout(() => btn.innerText = old, 1000);
+        });
+    }
+
+    function handleFileImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const dataArray = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(dataArray, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+                if (jsonData.length < 2) return alert("הקובץ ריק.");
+                const headers = jsonData[0].map(h => String(h || "").toLowerCase().trim());
+                const findCol = (kw) => headers.findIndex(h => kw.some(k => h.includes(k)));
+                const colIdx = {
+                    customer: findCol(['לקוח', 'customer', 'name']),
+                    system:   findCol(['מערכת', 'מוצר', 'system', 'product']),
+                    user:      findCol(['משתמש', 'user', 'login']),
+                    pass:      findCol(['סיסמה', 'סיסמא', 'pass'])
+                };
+                if (colIdx.customer === -1 || colIdx.pass === -1) return alert("לא נמצאו עמודות לקוח וסיסמה.");
+                let addedCount = 0;
+                for (let i = 1; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    const customer = String(row[colIdx.customer] || '').trim();
+                    const pass = String(row[colIdx.pass] || '').trim();
+                    if (!customer || !pass) continue;
+                    const system = colIdx.system !== -1 ? String(row[colIdx.system] || 'כללי').trim() : 'כללי';
+                    const user = colIdx.user !== -1 ? String(row[colIdx.user] || 'ללא משתמש').trim() : 'ללא משתמש';
+                    if (!data[customer]) data[customer] = [];
+                    if (!data[customer].some(item => item.system.toLowerCase() === system.toLowerCase() && item.user.toLowerCase() === user.toLowerCase() && item.pass === pass)) {
+                        data[customer].push({ system, user, pass });
+                        addedCount++;
+                    }
+                }
+                if (addedCount > 0) { await save(`Imported ${addedCount} items from Excel`); renderCustomers(); alert(`נוספו ${addedCount} פריטים.`); }
+            } catch (err) { alert("שגיאה בייבוא."); }
+            event.target.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function logout() { sessionStorage.clear(); window.location.href = "login.html"; }
+    function openCustomerModal() { document.getElementById('customerModal').style.display = 'flex'; document.getElementById('newCustomerName').focus(); }
+    function closeCustomerModal() { document.getElementById('customerModal').style.display = 'none'; document.getElementById('newCustomerName').value = ''; }
+    
+    function confirmAddCustomer() {
+        const name = document.getElementById('newCustomerName').value.trim();
+        if (name && !data[name]) { 
+            data[name] = []; 
+            save(`Created customer: ${name}`); 
+            renderCustomers(); 
+            selectCustomer(name); 
+            closeCustomerModal(); 
+        }
+    }
+
+    function openModal() { editingIndex = null; document.getElementById('modalTitle').innerText = "הוספת מוצר"; clearModal(); document.getElementById('passwordModal').style.display = 'flex'; }
+    function openEditModal(i) { editingIndex = i; const item = data[activeCustomer][i]; document.getElementById('modalTitle').innerText = "עריכת מוצר"; document.getElementById('sysInput').value = item.system; document.getElementById('userInput').value = item.user; document.getElementById('passInput').value = item.pass; document.getElementById('passwordModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('passwordModal').style.display = 'none'; }
+    function clearModal() { document.getElementById('sysInput').value = ''; document.getElementById('userInput').value = ''; document.getElementById('passInput').value = ''; }
+    
+    function confirmAddPassword() {
+        const s = document.getElementById('sysInput').value, u = document.getElementById('userInput').value, p = document.getElementById('passInput').value;
+        if(s && u && p) {
+            const note = editingIndex !== null ? `Edited ${s} for ${activeCustomer}` : `Added ${s} to ${activeCustomer}`;
+            if(editingIndex !== null) data[activeCustomer][editingIndex] = {system:s, user:u, pass:p};
+            else data[activeCustomer].push({system:s, user:u, pass:p});
+            save(note); renderPasswords(); closeModal(); renderCustomers();
+        }
+    }
+
+    function deletePass(i) { 
+        if(confirm("למחוק?")) { 
+            const sys = data[activeCustomer][i].system;
+            data[activeCustomer].splice(i, 1); 
+            save(`Deleted ${sys} from ${activeCustomer}`); 
+            renderPasswords(); 
+            renderCustomers(); 
+        } 
+    }
+
+    async function deleteCustomer() {
+        if(confirm(`מחיקת הלקוח "${activeCustomer}"?`)) {
+            const name = activeCustomer;
+            delete data[activeCustomer];
+            await save(`Deleted entire customer: ${name}`);
+            activeCustomer = null;
+            window.history.pushState({}, '', window.location.pathname);
+            document.getElementById('view-details').style.display='none';
+            document.getElementById('view-default').style.display='block';
+            renderCustomers();
+        }
+    }
+
+    function exportToExcel() {
+        let csv = "\uFEFFלקוח,מוצר,משתמש,סיסמה\n";
+        for (let c in data) data[c].forEach(i => csv += `${c},${i.system},${i.user},${i.pass}\n`);
+        const link = document.createElement("a");
+        link.setAttribute("href", URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'})));
+        link.setAttribute("download", "IT_Vault_Backup.csv"); link.click();
+    }
+
+    let idleTimer;
+    const resetTimer = () => { clearTimeout(idleTimer); idleTimer = setTimeout(() => { logout(); }, 5 * 60 * 1000); };
+    window.onload = resetTimer; window.onmousemove = resetTimer; window.onkeydown = resetTimer;
+    loadFromServer();
+</script>
+</body>
+</html>

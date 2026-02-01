@@ -1,0 +1,18 @@
+﻿async function loadFromServer() {
+    try {
+        const res = await fetch('db.php?action=load');
+        const text = await res.text(); // קודם קוראים כטקסט
+        
+        if (!text || text.trim() === "") {
+            console.warn("Server returned empty response");
+            data = {};
+        } else {
+            data = JSON.parse(text); // מפענחים ידנית
+        }
+        renderCustomers();
+    } catch(e) { 
+        console.error("Load error detailed:", e); 
+        data = {}; // אם יש שגיאה, האתר לא יקרוס אלא פשוט יהיה ריק
+        renderCustomers();
+    }
+}
