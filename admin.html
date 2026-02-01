@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mister Fix | Admin Mode</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #007aff; --bg: #f4f7f9; --sidebar: #1c1c1e; --border: #e5e5ea; }
+        body { font-family: 'Inter', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: #1c1c1e; }
+
+        .sidebar { width: 260px; background: var(--sidebar); color: white; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        .sidebar h2 { color: var(--primary); font-size: 20px; margin-bottom: 30px; }
+        .nav-item { padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; transition: 0.2s; font-weight: 500; }
+        .nav-item:hover { background: #2c2c2e; }
+        .nav-item.active { background: var(--primary); }
+
+        .content { flex: 1; padding: 40px; overflow-y: auto; box-sizing: border-box; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .stat-label { font-size: 12px; color: #8e8e93; font-weight: 700; text-transform: uppercase; }
+        .stat-val { font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 5px; }
+
+        .table-container { background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8f9fa; padding: 15px; text-align: left; font-size: 13px; color: #8e8e93; border-bottom: 1px solid var(--border); }
+        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 14px; }
+
+        .status-tag { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #e5f1ff; color: #007aff; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body id="admin-body" style="display:none;">
+
+    <div class="sidebar">
+        <h2>MISTER FIX IT</h2>
+        <div class="nav-item active">📊 Dashboard</div>
+        <div class="nav-item">📋 All Tickets</div>
+        <div class="nav-item">👥 Clients</div>
+        <div class="nav-item" onclick="location.href='index.html'" style="margin-top: auto; color: #ff3b30;">🚪 Exit Admin</div>
+    </div>
+
+    <div class="content">
+        <div class="header">
+            <h1>IT Management</h1>
+            <button style="padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">+ New Repair</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><div class="stat-label">Total Jobs</div><div class="stat-val">24</div></div>
+            <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-val">9</div></div>
+            <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-val">$1,240</div></div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Device</th>
+                        <th>Status</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><b>FIX-1024</b></td>
+                        <td>Michael Scott</td>
+                        <td>MacBook Pro</td>
+                        <td><span class="status-tag">FIXING</span></td>
+                        <td>$350.00</td>
+                    </tr>
+                    <tr>
+                        <td><b>FIX-1025</b></td>
+                        <td>Pam Beesly</td>
+                        <td>iPhone 13</td>
+                        <td><span class="status-tag">NEW</span></td>
+                        <td>$85.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Very basic security check
+        const login = prompt("Enter IT Passcode:");
+        if (login === "admin") {
+            document.getElementById('admin-body').style.display = 'flex';
+        } else {
+            alert("Access Denied");
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
